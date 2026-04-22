@@ -1,0 +1,118 @@
+/* 
+Theme Name: Hello Elementor Child
+Theme URI: https://github.com/elementor/hello-theme-child/
+Description: Hello Elementor Child is a child theme of Hello Elementor, created by Elementor team
+Author: Elementor Team
+Author URI: https://elementor.com/
+Template: hello-elementor
+Version: 2.0.0
+Text Domain: hello-elementor-child
+License: GNU General Public License v3 or later.
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
+Tags: flexible-header, custom-colors, custom-menu, custom-logo, editor-style, featured-images, rtl-language-support, threaded-comments, translation-ready
+*/
+
+/* Add your custom styles here */
+
+.address-line2 {
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+/* ── Location block (replaces address in header) ── */
+
+.blueox-location-block {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	line-height: 1.3;
+}
+
+.blueox-location-block__pin {
+	flex-shrink: 0;
+	color: #d9534f;
+}
+
+.blueox-location-block__pin svg {
+	display: block;
+	width: 24px;
+	height: 24px;
+}
+
+.blueox-location-block__content {
+	display: flex;
+	flex-direction: column;
+}
+
+/* ── "Selected location:" label ── */
+
+.blueox-location-block__label {
+	font-size: 11px !important;
+	font-weight: 400;
+	color: inherit;
+	opacity: 0.6;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 2px;
+}
+
+/* ── Switcher row: city name + dropdown arrow ── */
+
+.blueox-location-block__switcher {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	background-color: rgba(245, 130, 32, 0.15);
+	border: 1px solid rgba(245, 130, 32, 0.4);
+	border-radius: 6px;
+	padding: 4px 10px;
+	transition: background-color 0.2s;
+}
+
+.blueox-location-block__switcher:hover {
+	background-color: rgba(245, 130, 32, 0.25);
+}
+
+.blueox-location-block__city {
+	font-size: 20px !important;
+	font-weight: 700;
+	color: inherit;
+}
+
+.blueox-location-block__arrow {
+	flex-shrink: 0;
+	color: inherit;
+	display: block;
+}
+
+/* Hidden <select> overlaid on the switcher so clicks open the native dropdown */
+.blueox-location-block__select {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+	z-index: 1;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+}
+
+/* ── Address (secondary info) ── */
+
+.blueox-location-block__address {
+	font-family: "Roboto", sans-serif;
+	font-size: 14px !important;
+	font-weight: 400;
+	color: #15263D;
+	margin-top: 4px;
+}
+
+.blueox-location-block__address .address-line2 {
+	font-style: normal;
+	font-size: 14px !important;
+}
