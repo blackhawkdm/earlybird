@@ -108,9 +108,9 @@ class EarlyBird_Location_Importer {
 	 * To find an attachment ID: WP Admin → Media Library → open the image →
 	 * read the post= number from the URL.
 	 */
-	const FALLBACK_HERO_ID   = 0; // ← UPDATE: set to attachment ID of fallback hero image
-	const FALLBACK_IMAGE2_ID = 0; // ← UPDATE: set to attachment ID of fallback image 2
-	const FALLBACK_IMAGE3_ID = 0; // ← UPDATE: set to attachment ID of fallback image 3
+	const FALLBACK_HERO_ID   = 14967; // fallback hero image
+	const FALLBACK_IMAGE2_ID = 14966; // fallback image 2
+	const FALLBACK_IMAGE3_ID = 14965; // fallback image 3
 
 	// -------------------------------------------------------------------------
 	// Instance state
