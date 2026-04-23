@@ -493,7 +493,7 @@ class EarlyBird_Location_Importer {
 		update_field( 'primary_cta_text', trim( $cols[ $c['COL_CTA_TEXT'] ] ), $post_id );
 		$phone_value = trim( $cols[ $c['COL_PHONE'] ] );
 		update_field( 'phone_display', $phone_value,                                 $post_id );
-		update_field( 'phone_tel',     preg_replace( '/[^0-9]/', '', $phone_value ), $post_id );
+		update_field( 'phone_tel',     'tel:' . preg_replace( '/[^0-9]/', '', $phone_value ), $post_id );
 
 		// --- FAQ fields (fixed named, not repeater) ---
 		update_field( 'faq_1_question', trim( $cols[ $c['COL_FAQ1_Q'] ] ), $post_id );
