@@ -20,8 +20,10 @@
  * starting at AG. Dynamic header detection handles this automatically.
  *
  * Image notes:
- *   - Only hero_image ({slug}-hero.webp) and image_2 ({slug}-2.webp) are used.
- *   - image_3 (AM column) is empty for all EarlyBird rows — skipped entirely.
+ *   - hero_image: {slug}-hero.webp
+ *   - image_2:    {slug}-2.webp
+ *   - image_3:    {slug}.webp  (no suffix — just the slug)
+ *   - All three images live in the single --images-dir folder.
  *   - Fallback image attachment IDs must be set via the FALLBACK_*_ID constants
  *     after uploading a fallback image to the media library.
  *
@@ -74,7 +76,8 @@ class EarlyBird_Location_Importer {
 	const COL_HERO_ALT   = 35; // AJ — Hero Image Alt Text
 	const COL_IMG2       = 36; // AK — Image 2
 	const COL_IMG2_ALT   = 37; // AL — Image 2 Alt Text
-	// AM=38 is Image 3 — empty for all EarlyBird rows, not processed
+	const COL_IMG3_ALT   = 39; // AN — Image 3 Alt Text
+	// AM=38 is Image 3 URL — empty for all EarlyBird rows; image_3 uses {slug}.webp
 	const COL_OG_TITLE   = 43; // AR — OG Title        → rank_math_og_title
 	const COL_OG_DESC    = 44; // AS — OG Description  → rank_math_og_description
 	const COL_REVIEW1    = 45; // AT — Review 1
@@ -107,6 +110,7 @@ class EarlyBird_Location_Importer {
 	 */
 	const FALLBACK_HERO_ID   = 0; // ← UPDATE: set to attachment ID of fallback hero image
 	const FALLBACK_IMAGE2_ID = 0; // ← UPDATE: set to attachment ID of fallback image 2
+	const FALLBACK_IMAGE3_ID = 0; // ← UPDATE: set to attachment ID of fallback image 3
 
 	// -------------------------------------------------------------------------
 	// Instance state
@@ -190,6 +194,7 @@ class EarlyBird_Location_Importer {
 			'COL_PHONE'      => self::COL_PHONE,
 			'COL_HERO_ALT'   => self::COL_HERO_ALT,
 			'COL_IMG2_ALT'   => self::COL_IMG2_ALT,
+			'COL_IMG3_ALT'   => self::COL_IMG3_ALT,
 			'COL_OG_TITLE'   => self::COL_OG_TITLE,
 			'COL_OG_DESC'    => self::COL_OG_DESC,
 			'COL_REVIEW1'    => self::COL_REVIEW1,
@@ -292,6 +297,7 @@ class EarlyBird_Location_Importer {
 			'COL_PHONE'      => 'phone',
 			'COL_HERO_ALT'   => 'hero image alt',
 			'COL_IMG2_ALT'   => 'image 2 alt',
+			'COL_IMG3_ALT'   => 'image 3 alt',
 			'COL_OG_TITLE'   => 'og title',
 			'COL_OG_DESC'    => 'og description',
 		];
@@ -485,7 +491,9 @@ class EarlyBird_Location_Importer {
 
 		// --- CTA tab ---
 		update_field( 'primary_cta_text', trim( $cols[ $c['COL_CTA_TEXT'] ] ), $post_id );
-		update_field( 'phone_display',    trim( $cols[ $c['COL_PHONE'] ] ),    $post_id );
+		$phone_value = trim( $cols[ $c['COL_PHONE'] ] );
+		update_field( 'phone_display', $phone_value,                                 $post_id );
+		update_field( 'phone_tel',     preg_replace( '/[^0-9]/', '', $phone_value ), $post_id );
 
 		// --- FAQ fields (fixed named, not repeater) ---
 		update_field( 'faq_1_question', trim( $cols[ $c['COL_FAQ1_Q'] ] ), $post_id );
@@ -521,24 +529,29 @@ class EarlyBird_Location_Importer {
 
 		$c = $this->col;
 
-		// EarlyBird: only hero_image and image_2 — image_3 (AM column) is empty
-		// for all rows and is not processed.
-		$images = [
-			'hero_image' => [
-				'filename'    => "{$slug}-hero.webp",
-				'alt'         => trim( $cols[ $c['COL_HERO_ALT'] ] ),
-				'alt_field'   => 'hero_alt',
-				'cache_key'   => "_eb_img_hero_{$slug}",
-				'fallback_id' => self::FALLBACK_HERO_ID,
-			],
-			'image_2' => [
-				'filename'    => "{$slug}-2.webp",
-				'alt'         => trim( $cols[ $c['COL_IMG2_ALT'] ] ),
-				'alt_field'   => 'image_2_alt',
-				'cache_key'   => "_eb_img_2_{$slug}",
-				'fallback_id' => self::FALLBACK_IMAGE2_ID,
-			],
-		];
+	$images = [
+		'hero_image' => [
+			'filename'    => "{$slug}-hero.webp",
+			'alt'         => trim( $cols[ $c['COL_HERO_ALT'] ] ),
+			'alt_field'   => 'hero_alt',
+			'cache_key'   => "_eb_img_hero_{$slug}",
+			'fallback_id' => self::FALLBACK_HERO_ID,
+		],
+		'image_2' => [
+			'filename'    => "{$slug}-2.webp",
+			'alt'         => trim( $cols[ $c['COL_IMG2_ALT'] ] ),
+			'alt_field'   => 'image_2_alt',
+			'cache_key'   => "_eb_img_2_{$slug}",
+			'fallback_id' => self::FALLBACK_IMAGE2_ID,
+		],
+		'image_3' => [
+			'filename'    => "{$slug}.webp",
+			'alt'         => trim( $cols[ $c['COL_IMG3_ALT'] ] ),
+			'alt_field'   => 'image_3_alt',
+			'cache_key'   => "_eb_img_3_{$slug}",
+			'fallback_id' => self::FALLBACK_IMAGE3_ID,
+		],
+	];
 
 		foreach ( $images as $acf_field => $image ) {
 			$file_path = $this->images_dir . '/' . $image['filename'];
@@ -710,10 +723,11 @@ class EarlyBird_Location_Importer {
 			return;
 		}
 
-		$image_fallbacks = [
-			"{$slug}-hero.webp" => self::FALLBACK_HERO_ID,
-			"{$slug}-2.webp"    => self::FALLBACK_IMAGE2_ID,
-		];
+	$image_fallbacks = [
+		"{$slug}-hero.webp" => self::FALLBACK_HERO_ID,
+		"{$slug}-2.webp"    => self::FALLBACK_IMAGE2_ID,
+		"{$slug}.webp"      => self::FALLBACK_IMAGE3_ID,
+	];
 
 		foreach ( $image_fallbacks as $filename => $fallback_id ) {
 			$path = $this->images_dir . '/' . $filename;

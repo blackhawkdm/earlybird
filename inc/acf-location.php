@@ -18,12 +18,11 @@
  *   Body        — section_{1-4}_h2 / section_{1-4}_body (fixed pairs, not repeater)
  *   FAQ         — faq_{1-3}_question / faq_{1-3}_answer (fixed named fields)
  *   Testimonials— testimonial_{1-3}_quote / testimonial_{1-3}_author (fixed named fields)
- *   Images      — image_2, image_2_alt
- *   CTA         — primary_cta_text, phone_display
+ *   Images      — image_2, image_2_alt, image_3, image_3_alt
+ *   CTA         — primary_cta_text, phone_display, phone_tel
  *
- * Note: image_3 / schema_type are not used for EarlyBird location pages.
- * image_3 — AM column is empty for all EarlyBird CSV rows.
- * schema_type — hardcoded as Electrician in the importer and schema output.
+ * Note: schema_type is not stored in ACF — hardcoded as Electrician in the
+ * importer and schema output. image_3 maps to {slug}.webp in --images-dir.
  *
  * @package HelloElementorChild
  */
@@ -361,17 +360,35 @@ function earlybird_register_location_field_group() {
 				'instructions'  => 'Populated by the importer from {slug}-2.webp.',
 				'wrapper'       => array( 'width' => '50' ),
 			),
-			array(
-				'key'     => 'field_ebloc_image_2_alt',
-				'label'   => 'Image 2 Alt Text',
-				'name'    => 'image_2_alt',
-				'type'    => 'text',
-				'wrapper' => array( 'width' => '50' ),
-			),
+		array(
+			'key'     => 'field_ebloc_image_2_alt',
+			'label'   => 'Image 2 Alt Text',
+			'name'    => 'image_2_alt',
+			'type'    => 'text',
+			'wrapper' => array( 'width' => '50' ),
+		),
+		array(
+			'key'           => 'field_ebloc_image_3',
+			'label'         => 'Image 3',
+			'name'          => 'image_3',
+			'type'          => 'image',
+			'return_format' => 'array',
+			'preview_size'  => 'medium',
+			'library'       => 'all',
+			'instructions'  => 'Populated by the importer from {slug}.webp.',
+			'wrapper'       => array( 'width' => '50' ),
+		),
+		array(
+			'key'     => 'field_ebloc_image_3_alt',
+			'label'   => 'Image 3 Alt Text',
+			'name'    => 'image_3_alt',
+			'type'    => 'text',
+			'wrapper' => array( 'width' => '50' ),
+		),
 
-			// ----------------------------------------------------------------
-			// TAB: CTA
-			// ----------------------------------------------------------------
+		// ----------------------------------------------------------------
+		// TAB: CTA
+		// ----------------------------------------------------------------
 			array(
 				'key'   => 'field_ebloc_tab_cta',
 				'label' => 'CTA',
@@ -391,7 +408,15 @@ function earlybird_register_location_field_group() {
 			'name'         => 'phone_display',
 			'type'         => 'text',
 			'instructions' => 'Populated by the importer from column AH (Phone # Display).',
-			'wrapper'      => array( 'width' => '100' ),
+			'wrapper'      => array( 'width' => '50' ),
+		),
+		array(
+			'key'          => 'field_ebloc_phone_tel',
+			'label'        => 'Phone Tel',
+			'name'         => 'phone_tel',
+			'type'         => 'text',
+			'instructions' => 'Digits only e.g. 6124211300 — populated automatically by importer from phone_display.',
+			'wrapper'      => array( 'width' => '50' ),
 		),
 
 	), // end fields
