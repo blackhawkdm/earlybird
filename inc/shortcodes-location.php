@@ -1,6 +1,6 @@
 <?php
 /**
- * Location-based shortcodes and menu filters for Paul Bunyan Plumbing.
+ * Location-based shortcodes and menu filters for Early Bird Electricians.
  *
  * @package HelloElementorChild
  */
@@ -11,32 +11,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /* ---------------------------------------------------------------
  * 1. LOCATION DATA
+
  * ------------------------------------------------------------- */
 
-function pb_get_location_data() {
+function eb_get_location_data() {
 	return array(
 		'Minneapolis' => array(
 			'city'              => 'Minneapolis',
-			'services_label'    => 'Expert Plumber in Minneapolis',
+			'services_label'    => 'Electric Service in Minneapolis',
 			'address_line1'     => '5720 International Parkway',
 			'address_line2'     => 'New Hope, MN 55428',
-			'phone_display'     => '612-340-1444',
-			'phone_tel'         => '6123401444',
+			'phone_display'     => '612-421-1300',
+			'phone_tel'         => '6124211300',
 			'booking_url'       => '/minneapolis/service-areas/',
 			'url_prefix'        => '/minneapolis',
 			'service_urls'      => array(
-				'water_heaters'  => '/minneapolis/services/water-heaters/',
-				'drain_sewer'    => '/minneapolis/services/drains-sewers/',
-				'plumbing'       => '/minneapolis/services/plumbing/',
-				'water_quality'  => '/minneapolis/services/water-quality/',
-				'leak_detection' => '/minneapolis/services/other-services/leak-repair/',
+				'repair'         => '/minneapolis/services/electric-repair/',
+				'install'        => '/minneapolis/services/electric-installation/',
+				'lighting'       => '/minneapolis/services/indoor-outdoor-lighting/',
+				'safety'         => '/minneapolis/services/safety-services/',
+				'wiring'         => '/minneapolis/services/electric-repair/home-wiring-rewiring/',
+				'panels'         => '/minneapolis/services/electric-installation/electrical-panels/',
+				'carbonmonoxide' => '/minneapolis/services/safety-services/carbon-monoxide-detectors/',
+				'smoke'          => '/minneapolis/services/safety-services/smoke-detectors/',
+				'homesafety'     => '/minneapolis/services/safety-services/home-electrical-safety-inspection/',
 			),
-			'btn_label_phone'   => '(612) 340-1444',
+			'btn_label_phone'   => 'Call (612) 421-1300',
 			'btn_label_booking' => 'Book in Minneapolis',
 		),
 		'Rochester' => array(
 			'city'              => 'Rochester',
-			'services_label'    => 'Expert Plumber in Rochester',
+			'services_label'    => 'Electric Service in Rochester',
 			'address_line1'     => '4410 19th Street NW',
 			'address_line2'     => 'Rochester, MN 55901',
 			'phone_display'     => '507-821-3664',
@@ -44,13 +49,17 @@ function pb_get_location_data() {
 			'booking_url'       => '/rochester/service-areas/',
 			'url_prefix'        => '/rochester',
 			'service_urls'      => array(
-				'water_heaters'  => '/rochester/services/water-heaters/',
-				'drain_sewer'    => '/rochester/services/drains-sewers/',
-				'plumbing'       => '/rochester/services/plumbing/',
-				'water_quality'  => '/rochester/services/water-quality/',
-				'leak_detection' => '/rochester/services/other-services/leak-repair/',
+				'repair'         => '/rochester/services/electric-repair/',
+				'install'        => '/rochester/services/electric-installation/',
+				'lighting'       => '/rochester/services/indoor-outdoor-lighting/',
+				'safety'         => '/rochester/services/safety-services/',
+				'wiring'         => '/rochester/services/electric-repair/home-wiring-rewiring/',
+				'panels'         => '/rochester/services/electric-installation/electrical-panels/',
+				'carbonmonoxide' => '/rochester/services/safety-services/carbon-monoxide-detectors/',
+				'smoke'          => '/rochester/services/safety-services/smoke-detectors/',
+				'homesafety'     => '/rochester/services/safety-services/home-electrical-safety-inspection/',
 			),
-			'btn_label_phone'   => '(507) 821-3664',
+			'btn_label_phone'   => 'Call (507) 821-3664',
 			'btn_label_booking' => 'Book in Rochester',
 		),
 	);
@@ -60,9 +69,9 @@ function pb_get_location_data() {
  * 2. HELPER — detect visitor location from URL path, then cookie
  * ------------------------------------------------------------- */
 
-function pb_get_visitor_location() {
-	$locations = pb_get_location_data();
-	$default   = 'Rochester';
+function eb_get_visitor_location() {
+	$locations = eb_get_location_data();
+	$default   = 'Minneapolis';
 
 	// 1. Check URL path for a location slug (best for SEO — Googlebot gets correct content).
 	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
@@ -89,100 +98,94 @@ function pb_get_visitor_location() {
  * 3. SHORTCODES — one per data field
  * ------------------------------------------------------------- */
 
-// [pb_city]
-function pb_city_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_city]
+function eb_city_shortcode() {
+	$loc = eb_get_visitor_location();
 	return '<span class="loc-dynamic-data" data-field="city">' . esc_html( $loc['city'] ) . '</span>';
 }
-add_shortcode( 'pb_city', 'pb_city_shortcode' );
+add_shortcode( 'eb_city', 'eb_city_shortcode' );
 
-// [pb_services_label]
-function pb_services_label_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_services_label]
+function eb_services_label_shortcode() {
+	$loc = eb_get_visitor_location();
 	return '<span class="loc-dynamic-data" data-field="services">' . esc_html( $loc['services_label'] ) . '</span>';
 }
-add_shortcode( 'pb_services_label', 'pb_services_label_shortcode' );
+add_shortcode( 'eb_services_label', 'eb_services_label_shortcode' );
 
-// [pb_address]
-function pb_address_shortcode() {
-	$loc  = pb_get_visitor_location();
+// [eb_address]
+function eb_address_shortcode() {
+	$loc  = eb_get_visitor_location();
 	$html = esc_html( $loc['address_line1'] ) . ' <br> <span class="address-line2">' . esc_html( $loc['address_line2'] ) . '</span>';
 	return '<span class="loc-dynamic-data" data-field="address">' . wp_kses( $html, array( 'br' => array(), 'span' => array( 'class' => array() ) ) ) . '</span>';
 }
-add_shortcode( 'pb_address', 'pb_address_shortcode' );
+add_shortcode( 'eb_address', 'eb_address_shortcode' );
 
-// [pb_phone]
-function pb_phone_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_phone]
+function eb_phone_shortcode() {
+	$loc = eb_get_visitor_location();
 	return '<span class="loc-dynamic-data" data-field="phone">' . esc_html( $loc['phone_display'] ) . '</span>';
 }
-add_shortcode( 'pb_phone', 'pb_phone_shortcode' );
+add_shortcode( 'eb_phone', 'eb_phone_shortcode' );
 
-// [pb_phone_link] — raw tel: URI
-function pb_phone_link_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_phone_link] — raw tel: URI, no HTML wrapper
+function eb_phone_link_shortcode() {
+	$loc = eb_get_visitor_location();
 	return 'tel:' . esc_attr( $loc['phone_tel'] );
 }
-add_shortcode( 'pb_phone_link', 'pb_phone_link_shortcode' );
+add_shortcode( 'eb_phone_link', 'eb_phone_link_shortcode' );
 
-// [pb_inline_phone] — inline clickable phone link
-function pb_inline_phone_shortcode() {
-	$loc = pb_get_visitor_location();
-	return '<a href="tel:' . esc_attr( $loc['phone_tel'] ) . '" class="loc-dynamic-data" data-field="phone_inline">' . esc_html( $loc['phone_display'] ) . '</a>';
-}
-add_shortcode( 'pb_inline_phone', 'pb_inline_phone_shortcode' );
-
-// [csad_phone] — inline clickable phone link (legacy shortcode)
+// [csad_phone] — inline clickable phone link
 function csad_phone_shortcode() {
-	$loc = pb_get_visitor_location();
+	$loc = eb_get_visitor_location();
 	return '<a href="tel:' . esc_attr( $loc['phone_tel'] ) . '" class="loc-dynamic-data" data-field="phone_inline">' . esc_html( $loc['phone_display'] ) . '</a>';
 }
 add_shortcode( 'csad_phone', 'csad_phone_shortcode' );
 
-// [pb_booking_url] — raw URL
-function pb_booking_url_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_booking_url] — raw URL, no HTML wrapper
+function eb_booking_url_shortcode() {
+	$loc = eb_get_visitor_location();
 	return esc_url( $loc['booking_url'] );
 }
-add_shortcode( 'pb_booking_url', 'pb_booking_url_shortcode' );
+add_shortcode( 'eb_booking_url', 'eb_booking_url_shortcode' );
 
-// [pb_service_url service="water_heaters"] — raw URL
-function pb_service_url_shortcode( $atts ) {
+// [eb_service_url service="repair"] — raw URL, no HTML wrapper
+function eb_service_url_shortcode( $atts ) {
 	$a   = shortcode_atts( array( 'service' => '' ), $atts );
-	$loc = pb_get_visitor_location();
+	$loc = eb_get_visitor_location();
 	$key = sanitize_key( $a['service'] );
 	if ( isset( $loc['service_urls'][ $key ] ) ) {
 		return esc_url( $loc['service_urls'][ $key ] );
 	}
 	return '';
 }
-add_shortcode( 'pb_service_url', 'pb_service_url_shortcode' );
+add_shortcode( 'eb_service_url', 'eb_service_url_shortcode' );
 
-// [pb_url_prefix] — raw path prefix
-function pb_url_prefix_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_url_prefix] — raw path prefix, no HTML wrapper
+function eb_url_prefix_shortcode() {
+	$loc = eb_get_visitor_location();
 	return esc_attr( $loc['url_prefix'] );
 }
-add_shortcode( 'pb_url_prefix', 'pb_url_prefix_shortcode' );
+add_shortcode( 'eb_url_prefix', 'eb_url_prefix_shortcode' );
 
-// [pb_btn_label_phone]
-function pb_btn_label_phone_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_btn_label_phone]
+function eb_btn_label_phone_shortcode() {
+	$loc = eb_get_visitor_location();
 	return '<span class="loc-dynamic-data" data-field="btn_label_phone">' . esc_html( $loc['btn_label_phone'] ) . '</span>';
 }
-add_shortcode( 'pb_btn_label_phone', 'pb_btn_label_phone_shortcode' );
+add_shortcode( 'eb_btn_label_phone', 'eb_btn_label_phone_shortcode' );
 
-// [pb_btn_label_booking]
-function pb_btn_label_booking_shortcode() {
-	$loc = pb_get_visitor_location();
+// [eb_btn_label_booking]
+function eb_btn_label_booking_shortcode() {
+	$loc = eb_get_visitor_location();
 	return '<span class="loc-dynamic-data" data-field="btn_label_booking">' . esc_html( $loc['btn_label_booking'] ) . '</span>';
 }
-add_shortcode( 'pb_btn_label_booking', 'pb_btn_label_booking_shortcode' );
+add_shortcode( 'eb_btn_label_booking', 'eb_btn_label_booking_shortcode' );
 
-// [loc_data field="city" default="Minneapolis"] — legacy/generic shortcode
-function pb_loc_data_shortcode( $atts ) {
+// Keep legacy shortcodes for backward compatibility
+// [loc_data field="city" default="Minneapolis"]
+function eb_loc_data_shortcode( $atts ) {
 	$a   = shortcode_atts( array( 'field' => 'city', 'default' => '' ), $atts );
-	$loc = pb_get_visitor_location();
+	$loc = eb_get_visitor_location();
 
 	$field_map = array(
 		'city'              => 'city',
@@ -206,17 +209,17 @@ function pb_loc_data_shortcode( $atts ) {
 
 	return '<span class="loc-dynamic-data" data-field="' . esc_attr( $key ) . '">' . esc_html( $value ) . '</span>';
 }
-add_shortcode( 'loc_data', 'pb_loc_data_shortcode' );
+add_shortcode( 'loc_data', 'eb_loc_data_shortcode' );
 
 // [loc_button type="phone" text="Call Now"]
-function pb_loc_button_shortcode( $atts ) {
+function eb_loc_button_shortcode( $atts ) {
 	$a = shortcode_atts( array(
 		'type'  => 'phone',
 		'class' => 'elementor-button-link elementor-button elementor-size-sm',
 		'text'  => 'Call Now',
 	), $atts );
 
-	$loc = pb_get_visitor_location();
+	$loc = eb_get_visitor_location();
 
 	if ( $a['type'] === 'phone' ) {
 		$href  = 'tel:' . esc_attr( $loc['phone_tel'] );
@@ -232,12 +235,12 @@ function pb_loc_button_shortcode( $atts ) {
 		</span>
 	</a>';
 }
-add_shortcode( 'loc_button', 'pb_loc_button_shortcode' );
+add_shortcode( 'loc_button', 'eb_loc_button_shortcode' );
 
-// [pb_location_block] — address block with integrated location switcher.
-function pb_location_block_shortcode() {
-	$locations = pb_get_location_data();
-	$current   = pb_get_visitor_location();
+// [eb_location_block] — address block with integrated location switcher.
+function eb_location_block_shortcode() {
+	$locations = eb_get_location_data();
+	$current   = eb_get_visitor_location();
 
 	$arrow = '<svg class="blueox-location-block__arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 	$address_html = esc_html( $current['address_line1'] ) . ' <br> <span class="address-line2">' . esc_html( $current['address_line2'] ) . '</span>';
@@ -266,37 +269,40 @@ function pb_location_block_shortcode() {
 
 	return $html;
 }
-add_shortcode( 'pb_location_block', 'pb_location_block_shortcode' );
+add_shortcode( 'eb_location_block', 'eb_location_block_shortcode' );
 
 /* ---------------------------------------------------------------
  * 4. MENU FILTERS — rewrite URLs and add data attributes
  * ------------------------------------------------------------- */
 
-function pb_get_menu_service_map() {
+// Map of generic service paths to service keys (parent pages only)
+function eb_get_menu_service_map() {
 	return array(
-		'/services/water-heaters/'   => 'water_heaters',
-		'/services/drains-sewers/'   => 'drain_sewer',
-		'/services/plumbing/'        => 'plumbing',
-		'/services/water-quality/'   => 'water_quality',
+		'/services/electric-repair/'        => 'repair',
+		'/services/electric-installation/'  => 'install',
+		'/services/indoor-outdoor-lighting/' => 'lighting',
+		'/services/safety-services/'        => 'safety',
 	);
 }
 
-function pb_get_location_slugs() {
-	$locations = pb_get_location_data();
+// Get all location slugs for URL matching
+function eb_get_location_slugs() {
+	$locations = eb_get_location_data();
 	$slugs     = array();
 	foreach ( $locations as $loc ) {
 		$slugs[] = trim( $loc['url_prefix'], '/' );
 	}
-	return $slugs;
+	return $slugs; // e.g. ['minneapolis', 'rochester']
 }
 
-add_filter( 'wp_nav_menu_objects', 'pb_rewrite_menu_urls', 10, 2 );
+// Filter: rewrite menu item URLs to match visitor's location
+add_filter( 'wp_nav_menu_objects', 'eb_rewrite_menu_urls', 10, 2 );
 
-function pb_rewrite_menu_urls( $items, $args ) {
-	$loc   = pb_get_visitor_location();
-	$slugs = pb_get_location_slugs();
+function eb_rewrite_menu_urls( $items, $args ) {
+	$loc   = eb_get_visitor_location();
+	$slugs = eb_get_location_slugs();
 
-	$visitor_prefix = ltrim( $loc['url_prefix'], '/' );
+	$visitor_prefix = ltrim( $loc['url_prefix'], '/' ); // e.g. 'minneapolis'
 
 	foreach ( $items as &$item ) {
 		$url  = $item->url;
@@ -306,11 +312,14 @@ function pb_rewrite_menu_urls( $items, $args ) {
 			continue;
 		}
 
+		// Check if this URL contains any location slug
 		foreach ( $slugs as $slug ) {
 			if ( strpos( $path, '/' . $slug . '/' ) !== false ) {
+				// Replace the location slug with the visitor's prefix
 				$new_path  = str_replace( '/' . $slug . '/', '/' . $visitor_prefix . '/', $path );
 				$item->url = str_replace( $path, $new_path, $url );
 
+				// Add loc-dynamic-link class
 				if ( ! in_array( 'loc-dynamic-link', $item->classes, true ) ) {
 					$item->classes[] = 'loc-dynamic-link';
 				}
@@ -322,9 +331,10 @@ function pb_rewrite_menu_urls( $items, $args ) {
 	return $items;
 }
 
-add_filter( 'nav_menu_link_attributes', 'pb_add_service_data_attr', 10, 4 );
+// Filter: add data-service attribute to parent service page links only
+add_filter( 'nav_menu_link_attributes', 'eb_add_service_data_attr', 10, 4 );
 
-function pb_add_service_data_attr( $atts, $item, $args, $depth ) {
+function eb_add_service_data_attr( $atts, $item, $args, $depth ) {
 	$url  = isset( $atts['href'] ) ? $atts['href'] : '';
 	$path = wp_parse_url( $url, PHP_URL_PATH );
 
@@ -332,24 +342,30 @@ function pb_add_service_data_attr( $atts, $item, $args, $depth ) {
 		return $atts;
 	}
 
-	$service_map = pb_get_menu_service_map();
-	$slugs       = pb_get_location_slugs();
+	$service_map = eb_get_menu_service_map();
+	$slugs       = eb_get_location_slugs();
 
+	// Strip location prefix to get the generic path
 	$generic_path = $path;
 	foreach ( $slugs as $slug ) {
 		$generic_path = str_replace( '/' . $slug, '', $generic_path );
 	}
 
+	// Check if this generic path matches a parent service page exactly
 	foreach ( $service_map as $service_path => $service_key ) {
 		if ( $generic_path === $service_path ) {
+			// Exact match = parent page — add data-service
 			$atts['data-service'] = $service_key;
 
+			// Ensure loc-dynamic-link class is on the <a> tag
 			$existing = isset( $atts['class'] ) ? $atts['class'] : '';
 			if ( strpos( $existing, 'loc-dynamic-link' ) === false ) {
 				$atts['class'] = trim( $existing . ' loc-dynamic-link' );
 			}
 			break;
 		}
+		// If the path starts with the service path but has more segments,
+		// it's a child page — skip data-service attribute
 	}
 
 	return $atts;

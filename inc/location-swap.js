@@ -1,12 +1,18 @@
 /**
- * Paul Bunyan Plumbing — Location-Based Header Swap
+ * Early Bird Electricians — Location-Based Header Swap
+ *
+ * Paste into Elementor > Custom Code (head or body-end).
+ * Works on both staging and production — all URLs are relative.
  */
 (function () {
-  var COOKIE_NAME = "client_region";
-  var DEFAULT_CITY = "Rochester";
-  var GEO_API = "http://ip-api.com/json/?fields=status,zip";
+  /* ========================================================
+   * CONFIGURATION
+   * ====================================================== */
+  const COOKIE_NAME = "client_region";
+  const DEFAULT_CITY = "Minneapolis";
+  const GEO_API = "https://ipapi.co/json/";
 
-  // Minneapolis service area zip codes — everything else defaults to Rochester.
+  // Minneapolis service area zip codes.
   var MINNEAPOLIS_ZIPS = [
     "55001","55003","55005","55009","55011","55013","55014","55016","55019","55020",
     "55024","55025","55033","55038","55042","55043","55044","55046","55047","55054",
@@ -38,65 +44,85 @@
     "55987","55990","55991","55992"
   ];
 
-  var locationData = {
+  const locationData = {
     Minneapolis: {
       city: "Minneapolis",
-      services: "Expert Plumber in Minneapolis",
+      services: "Electric Service in Minneapolis",
       address:
         '5720 International Parkway <br> <span class="address-line2">New Hope, MN 55428</span>',
-      phone: "612-340-1444",
-      phone_link: "tel:6123401444",
+      phone: "612-421-1300",
+      phone_link: "tel:6124211300",
       booking: "/minneapolis/service-areas/",
       url_prefix: "/minneapolis",
-      water_heaters: "/minneapolis/services/water-heaters/",
-      drain_sewer: "/minneapolis/services/drains-sewers/",
-      plumbing: "/minneapolis/services/plumbing/",
-      water_quality: "/minneapolis/services/water-quality/",
-      leak_detection: "/minneapolis/services/other-services/leak-repair/",
-      btn_label_phone: "(612) 340-1444",
+      repair: "/minneapolis/services/electric-repair/",
+      install: "/minneapolis/services/electric-installation/",
+      lighting: "/minneapolis/services/indoor-outdoor-lighting/",
+      safety: "/minneapolis/services/safety-services/",
+      wiring: "/minneapolis/services/electric-repair/home-wiring-rewiring/",
+      panels:
+        "/minneapolis/services/electric-installation/electrical-panels/",
+      carbonmonoxide:
+        "/minneapolis/services/safety-services/carbon-monoxide-detectors/",
+      smoke: "/minneapolis/services/safety-services/smoke-detectors/",
+      homesafety:
+        "/minneapolis/services/safety-services/home-electrical-safety-inspection/",
+      btn_label_phone: "Call (612) 421-1300",
       btn_label_booking: "Book in Minneapolis",
     },
     Rochester: {
       city: "Rochester",
-      services: "Expert Plumber in Rochester",
+      services: "Electric Service in Rochester",
       address:
         '4410 19th Street NW <br> <span class="address-line2">Rochester, MN 55901</span>',
       phone: "507-821-3664",
       phone_link: "tel:5078213664",
       booking: "/rochester/service-areas/",
       url_prefix: "/rochester",
-      water_heaters: "/rochester/services/water-heaters/",
-      drain_sewer: "/rochester/services/drains-sewers/",
-      plumbing: "/rochester/services/plumbing/",
-      water_quality: "/rochester/services/water-quality/",
-      leak_detection: "/rochester/services/other-services/leak-repair/",
-      btn_label_phone: "(507) 821-3664",
+      repair: "/rochester/services/electric-repair/",
+      install: "/rochester/services/electric-installation/",
+      lighting: "/rochester/services/indoor-outdoor-lighting/",
+      safety: "/rochester/services/safety-services/",
+      wiring: "/rochester/services/electric-repair/home-wiring-rewiring/",
+      panels:
+        "/rochester/services/electric-installation/electrical-panels/",
+      carbonmonoxide:
+        "/rochester/services/safety-services/carbon-monoxide-detectors/",
+      smoke: "/rochester/services/safety-services/smoke-detectors/",
+      homesafety:
+        "/rochester/services/safety-services/home-electrical-safety-inspection/",
+      btn_label_phone: "Call (507) 821-3664",
       btn_label_booking: "Book in Rochester",
     },
   };
 
-  var LOCATION_SLUGS = ["minneapolis", "rochester"];
+  // Location slugs for catch-all rewriting
+  const LOCATION_SLUGS = ["minneapolis", "rochester"];
 
-  /* — Cookie helpers — */
+  /* ========================================================
+   * UTILITY — cookie helpers
+   * ====================================================== */
   function getCookie(name) {
-    var match = document.cookie.match(
+    const match = document.cookie.match(
       new RegExp("(?:^|;\\s*)" + name + "=([^;]*)")
     );
     return match ? decodeURIComponent(match[1]) : null;
   }
 
   function setCookie(name, value, days) {
-    var d = new Date();
+    const d = new Date();
     d.setTime(d.getTime() + days * 86400000);
     document.cookie =
       name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/;SameSite=Lax";
   }
 
-  /* — Detect: cookie → localStorage → geo API — */
+  /* ========================================================
+   * DETECT — cookie → localStorage → geo API
+   * ====================================================== */
   function detectCity(callback) {
-    var cookieVal = getCookie(COOKIE_NAME);
+    // 1. Cookie
+    const cookieVal = getCookie(COOKIE_NAME);
     if (cookieVal) {
-      var normalized =
+      const normalized =
         cookieVal.charAt(0).toUpperCase() + cookieVal.slice(1).toLowerCase();
       if (locationData[normalized]) {
         callback(normalized);
@@ -104,7 +130,8 @@
       }
     }
 
-    var stored = localStorage.getItem("pb_selected_city");
+    // 2. localStorage
+    const stored = localStorage.getItem("eb_selected_city");
     if (stored && locationData[stored]) {
       setCookie(COOKIE_NAME, stored, 30);
       callback(stored);
@@ -116,15 +143,16 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var city = DEFAULT_CITY;
-        if (data.status === "success" && data.zip) {
-          if (MINNEAPOLIS_ZIPS.indexOf(data.zip) !== -1) {
+        var zip = data && !data.error && data.postal ? String(data.postal) : null;
+        if (zip) {
+          if (MINNEAPOLIS_ZIPS.indexOf(zip) !== -1) {
             city = "Minneapolis";
-          } else if (ROCHESTER_ZIPS.indexOf(data.zip) !== -1) {
+          } else if (ROCHESTER_ZIPS.indexOf(zip) !== -1) {
             city = "Rochester";
           }
         }
         setCookie(COOKIE_NAME, city, 30);
-        localStorage.setItem("pb_selected_city", city);
+        localStorage.setItem("eb_selected_city", city);
         callback(city);
       })
       .catch(function () {
@@ -133,14 +161,17 @@
       });
   }
 
-  /* — Swap: apply location data to the DOM — */
+  /* ========================================================
+   * SWAP — apply location data to the DOM
+   * ====================================================== */
   function applyLocation(cityKey) {
     var loc = locationData[cityKey];
     if (!loc) return;
 
-    localStorage.setItem("pb_selected_city", cityKey);
+    // Save to localStorage
+    localStorage.setItem("eb_selected_city", cityKey);
 
-    /* A: Swap .loc-dynamic-data spans/links by data-field */
+    /* --- SECTION A: Swap .loc-dynamic-data spans/links by data-field --- */
     document.querySelectorAll(".loc-dynamic-data").forEach(function (el) {
       var field = el.getAttribute("data-field");
       if (field === "phone_inline") {
@@ -148,14 +179,14 @@
         el.textContent = loc.phone;
       } else if (field && loc[field] !== undefined) {
         if (field === "address") {
-          el.innerHTML = loc[field];
+          el.innerHTML = loc[field]; // contains HTML (<br>, <span>)
         } else {
           el.textContent = loc[field];
         }
       }
     });
 
-    /* B: Swap .loc-dynamic-link[data-service] hrefs */
+    /* --- SECTION B: Swap .loc-dynamic-link[data-service] hrefs --- */
     document
       .querySelectorAll(".loc-dynamic-link[data-service]")
       .forEach(function (el) {
@@ -165,12 +196,12 @@
         }
       });
 
-    /* C: Catch-all — rewrite any <a> with a location slug */
+    /* --- SECTION C: Catch-all — rewrite ANY <a> with a location slug --- */
     var slugPattern = new RegExp(
       "\\/(" + LOCATION_SLUGS.join("|") + ")\\/",
       "i"
     );
-    var targetSlug = loc.url_prefix.replace(/^\//, "");
+    var targetSlug = loc.url_prefix.replace(/^\//, ""); // e.g. 'minneapolis'
 
     document.querySelectorAll("a[href]").forEach(function (el) {
       var href = el.getAttribute("href");
@@ -182,7 +213,7 @@
       }
     });
 
-    /* D: Swap .loc-dynamic-btn buttons */
+    /* --- SECTION D: Swap .loc-dynamic-btn buttons --- */
     document.querySelectorAll(".loc-dynamic-btn").forEach(function (el) {
       var type = el.getAttribute("data-type");
       if (type === "phone") {
@@ -197,7 +228,9 @@
     });
   }
 
-  /* — Init — */
+  /* ========================================================
+   * INIT — run on DOMContentLoaded
+   * ====================================================== */
   function init() {
     detectCity(applyLocation);
 
@@ -206,7 +239,7 @@
       switcher.addEventListener("change", function () {
         var city = this.value;
         setCookie(COOKIE_NAME, city, 30);
-        localStorage.setItem("pb_selected_city", city);
+        localStorage.setItem("eb_selected_city", city);
         applyLocation(city);
       });
     }
