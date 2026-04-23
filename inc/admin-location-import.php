@@ -3,7 +3,7 @@
  * Admin Page: Tools → Import Locations
  *
  * Browser-based UI for running the location page importer. Calls the same
- * PaulBunyan_Location_Importer class as the WP-CLI command. Access is
+ * EarlyBird_Location_Importer class as the WP-CLI command. Access is
  * restricted to users with the manage_options capability.
  *
  * @package HelloElementorChild
@@ -13,19 +13,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-add_action( 'admin_menu', 'paulbunyan_register_import_locations_page' );
+add_action( 'admin_menu', 'earlybird_register_import_locations_page' );
 
-function paulbunyan_register_import_locations_page(): void {
+function earlybird_register_import_locations_page(): void {
 	add_management_page(
 		'Import Locations',
 		'Import Locations',
 		'manage_options',
-		'paulbunyan-import-locations',
-		'paulbunyan_render_import_locations_page'
+		'earlybird-import-locations',
+		'earlybird_render_import_locations_page'
 	);
 }
 
-function paulbunyan_render_import_locations_page(): void {
+function earlybird_render_import_locations_page(): void {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have permission to access this page.' ) );
 	}
@@ -33,27 +33,27 @@ function paulbunyan_render_import_locations_page(): void {
 	$result = null;
 	$error  = '';
 
-	if ( isset( $_POST['paulbunyan_run_import'] ) ) {
+	if ( isset( $_POST['earlybird_run_import'] ) ) {
 
-		if ( ! check_admin_referer( 'paulbunyan_import_locations', 'paulbunyan_import_nonce' ) ) {
+		if ( ! check_admin_referer( 'earlybird_import_locations', 'earlybird_import_nonce' ) ) {
 			wp_die( 'Security check failed.' );
 		}
 
 		$upload_ok = (
-			! empty( $_FILES['paulbunyan_csv']['tmp_name'] ) &&
-			isset( $_FILES['paulbunyan_csv']['error'] ) &&
-			UPLOAD_ERR_OK === (int) $_FILES['paulbunyan_csv']['error']
+			! empty( $_FILES['earlybird_csv']['tmp_name'] ) &&
+			isset( $_FILES['earlybird_csv']['error'] ) &&
+			UPLOAD_ERR_OK === (int) $_FILES['earlybird_csv']['error']
 		);
 
 		if ( ! $upload_ok ) {
 			$error = 'Please upload a valid CSV file.';
 		} else {
-			$csv_path   = $_FILES['paulbunyan_csv']['tmp_name'];
-			$dry_run    = ! empty( $_POST['paulbunyan_dry_run'] );
-			$only_slug  = sanitize_title( trim( $_POST['paulbunyan_only'] ?? '' ) );
-			$images_dir = sanitize_text_field( trim( $_POST['paulbunyan_images_dir'] ?? '' ) );
+			$csv_path   = $_FILES['earlybird_csv']['tmp_name'];
+			$dry_run    = ! empty( $_POST['earlybird_dry_run'] );
+			$only_slug  = sanitize_title( trim( $_POST['earlybird_only'] ?? '' ) );
+			$images_dir = sanitize_text_field( trim( $_POST['earlybird_images_dir'] ?? '' ) );
 
-			$importer = new PaulBunyan_Location_Importer( [
+			$importer = new EarlyBird_Location_Importer( [
 				'file'       => $csv_path,
 				'dry_run'    => $dry_run,
 				'only'       => $only_slug,
@@ -64,60 +64,69 @@ function paulbunyan_render_import_locations_page(): void {
 		}
 	}
 
-	$default_images_dir = '/home/wpe-user/apps/paulbunyans/public/wp-content/uploads/location-images';
+	// Update this path once the WPE environment name is known.
+	// WPE webroot is always /nas/content/live/{env}/ — never /home/wpe-user/apps/{env}/public/
+	$default_images_dir = '/nas/content/live/{earlybird-wpe-env}/wp-content/uploads/location-images';
 
 	?>
 	<div class="wrap">
 		<h1>Import Locations</h1>
-		<p>Creates or updates Paul Bunyan city location pages from the CSV. Each page is created as a standard WordPress page with the <strong>Location Page</strong> template, all ACF fields populated, images sideloaded from the server images folder, and Rank Math meta written directly.</p>
-		<p><strong>Protected slugs (never created or overwritten):</strong> <code>minneapolis</code>, <code>rochester</code></p>
+		<p>Creates or updates EarlyBird city location pages from the CSV. Each page is created as a standard WordPress page with the <strong>Location Page</strong> template, all ACF fields populated, images sideloaded from the server images folder, and Rank Math meta written directly.</p>
+		<p><strong>CSV file:</strong> <code>EarlyBird_SEO_Final_Location_Pages_.csv</code> — Row 2 = column headers, Row 3 = example row (auto-skipped), Row 4+ = data.</p>
+		<p><strong>Images:</strong> <code>{slug}-hero.webp</code> and <code>{slug}-2.webp</code> — no image_3 for EarlyBird.</p>
+		<?php if ( ! empty( EarlyBird_Location_Importer::PROTECTED_SLUGS ) ) : ?>
+		<p><strong>Protected slugs (never created or overwritten):</strong>
+			<?php foreach ( EarlyBird_Location_Importer::PROTECTED_SLUGS as $s ) : ?>
+				<code><?php echo esc_html( $s ); ?></code>
+			<?php endforeach; ?>
+		</p>
+		<?php endif; ?>
 
 		<?php if ( $error ) : ?>
 			<div class="notice notice-error is-dismissible"><p><?php echo esc_html( $error ); ?></p></div>
 		<?php endif; ?>
 
 		<form method="post" enctype="multipart/form-data" style="max-width:760px">
-			<?php wp_nonce_field( 'paulbunyan_import_locations', 'paulbunyan_import_nonce' ); ?>
+			<?php wp_nonce_field( 'earlybird_import_locations', 'earlybird_import_nonce' ); ?>
 
 			<table class="form-table" role="presentation">
 				<tr>
-					<th scope="row"><label for="paulbunyan_csv">CSV File</label></th>
+					<th scope="row"><label for="earlybird_csv">CSV File</label></th>
 					<td>
-						<input type="file" name="paulbunyan_csv" id="paulbunyan_csv" accept=".csv" required>
+						<input type="file" name="earlybird_csv" id="earlybird_csv" accept=".csv" required>
 						<p class="description">
-							<code>PaulBunyan_SEO_Final_Paul_Bunyan_SEO_Plan_.csv</code> — Row 2 = column headers,
+							<code>EarlyBird_SEO_Final_Location_Pages_.csv</code> — Row 2 = column headers,
 							Row 3 = example row (auto-skipped), Row 4+ = data.
 						</p>
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="paulbunyan_images_dir">Images Directory</label></th>
+					<th scope="row"><label for="earlybird_images_dir">Images Directory</label></th>
 					<td>
 						<input
 							type="text"
-							name="paulbunyan_images_dir"
-							id="paulbunyan_images_dir"
+							name="earlybird_images_dir"
+							id="earlybird_images_dir"
 							class="large-text"
 							value="<?php echo esc_attr( $default_images_dir ); ?>"
 						>
 						<p class="description">
 							Server path to the folder containing
-							<code>{slug}-hero.webp</code>,
-							<code>{slug}-2.webp</code>, and
-							<code>{slug}.webp</code>.
+							<code>{slug}-hero.webp</code> and
+							<code>{slug}-2.webp</code>.
 							Leave blank to skip image sideloading.
 						</p>
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="paulbunyan_only">Only Slug</label></th>
+					<th scope="row"><label for="earlybird_only">Only Slug</label></th>
 					<td>
 						<input
 							type="text"
-							name="paulbunyan_only"
-							id="paulbunyan_only"
+							name="earlybird_only"
+							id="earlybird_only"
 							class="regular-text"
-							placeholder="e.g. maple-grove"
+							placeholder="e.g. saint-paul"
 						>
 						<p class="description">Process only the row matching this slug. Leave blank to process all rows.</p>
 					</td>
@@ -126,25 +135,25 @@ function paulbunyan_render_import_locations_page(): void {
 					<th scope="row">Dry Run</th>
 					<td>
 						<label>
-							<input type="checkbox" name="paulbunyan_dry_run" value="1">
+							<input type="checkbox" name="earlybird_dry_run" value="1">
 							Preview planned actions and check image files — no writes made
 						</label>
 					</td>
 				</tr>
 			</table>
 
-			<?php submit_button( 'Run Import', 'primary large', 'paulbunyan_run_import' ); ?>
+			<?php submit_button( 'Run Import', 'primary large', 'earlybird_run_import' ); ?>
 		</form>
 
 		<?php if ( null !== $result ) : ?>
-			<?php paulbunyan_render_import_results( $result ); ?>
+			<?php earlybird_render_import_results( $result ); ?>
 		<?php endif; ?>
 
 	</div>
 	<?php
 }
 
-function paulbunyan_render_import_results( array $result ): void {
+function earlybird_render_import_results( array $result ): void {
 	$log   = $result['log'];
 	$stats = $result['stats'];
 

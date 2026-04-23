@@ -1,15 +1,15 @@
 <?php
 /**
- * WP-CLI Command: wp paulbunyan import-locations
+ * WP-CLI Command: wp earlybird import-locations
  *
- * Thin wrapper around PaulBunyan_Location_Importer. This file is loaded only
+ * Thin wrapper around EarlyBird_Location_Importer. This file is loaded only
  * when WP_CLI is defined (see the conditional require_once in functions.php).
  *
  * Usage examples:
- *   wp paulbunyan import-locations --file=cities.csv --dry-run
- *   wp paulbunyan import-locations --file=cities.csv --only=maple-grove \
+ *   wp earlybird import-locations --file=cities.csv --dry-run
+ *   wp earlybird import-locations --file=cities.csv --only=saint-paul \
  *       --images-dir="/path/to/Images"
- *   wp paulbunyan import-locations --file=cities.csv \
+ *   wp earlybird import-locations --file=cities.csv \
  *       --images-dir="/path/to/Images"
  *
  * Run from Local's Site Shell, not the regular Mac Terminal.
@@ -21,10 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class PaulBunyan_Import_Locations_Command {
+class EarlyBird_Import_Locations_Command {
 
 	/**
-	 * Import Paul Bunyan city location pages from a CSV file.
+	 * Import EarlyBird city location pages from a CSV file.
 	 *
 	 * ## OPTIONS
 	 *
@@ -38,21 +38,21 @@ class PaulBunyan_Import_Locations_Command {
 	 * : Process only the row whose city slug matches this value.
 	 *
 	 * [--images-dir=<path>]
-	 * : Absolute path to the local folder containing {slug}-hero.webp,
-	 *   {slug}-2.webp, and {slug}.webp. Required for image sideloading.
+	 * : Absolute path to the local folder containing {slug}-hero.webp and
+	 *   {slug}-2.webp. Required for image sideloading.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *   # Dry run — no writes, reports planned actions and checks images
-	 *   wp paulbunyan import-locations --file=cities.csv --dry-run \
+	 *   wp earlybird import-locations --file=cities.csv --dry-run \
 	 *       --images-dir="/path/to/Images"
 	 *
 	 *   # Pilot: import a single city
-	 *   wp paulbunyan import-locations --file=cities.csv --only=maple-grove \
+	 *   wp earlybird import-locations --file=cities.csv --only=saint-paul \
 	 *       --images-dir="/path/to/Images"
 	 *
 	 *   # Full import
-	 *   wp paulbunyan import-locations --file=cities.csv \
+	 *   wp earlybird import-locations --file=cities.csv \
 	 *       --images-dir="/path/to/Images"
 	 *
 	 * @when after_wp_load
@@ -61,7 +61,7 @@ class PaulBunyan_Import_Locations_Command {
 		$file = \WP_CLI\Utils\get_flag_value( $assoc_args, 'file', '' );
 
 		if ( empty( $file ) ) {
-			\WP_CLI::error( 'Missing required --file argument. Usage: wp paulbunyan import-locations --file=cities.csv' );
+			\WP_CLI::error( 'Missing required --file argument. Usage: wp earlybird import-locations --file=cities.csv' );
 		}
 
 		if ( ! file_exists( $file ) ) {
@@ -82,7 +82,7 @@ class PaulBunyan_Import_Locations_Command {
 
 		\WP_CLI::log( "Reading: {$file}" );
 
-		$importer = new PaulBunyan_Location_Importer( [
+		$importer = new EarlyBird_Location_Importer( [
 			'file'       => $file,
 			'dry_run'    => $dry_run,
 			'only'       => $only_slug,
@@ -145,4 +145,4 @@ class PaulBunyan_Import_Locations_Command {
 	}
 }
 
-\WP_CLI::add_command( 'paulbunyan import-locations', 'PaulBunyan_Import_Locations_Command' );
+\WP_CLI::add_command( 'earlybird import-locations', 'EarlyBird_Import_Locations_Command' );

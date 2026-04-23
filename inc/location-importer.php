@@ -1,6 +1,6 @@
 <?php
 /**
- * Paul Bunyan Location Importer — Core Class
+ * EarlyBird Location Importer — Core Class
  *
  * Shared logic used by both the WP-CLI command (cli-location-import.php)
  * and the Admin UI (admin-location-import.php). Instantiate the class,
@@ -13,7 +13,17 @@
  *   - Rank Math meta keys written directly via update_post_meta()
  *
  * Column positions are detected automatically by reading the CSV header row
- * (row 2). The class constants define the Paul Bunyan fallback positions.
+ * (row 2). The class constants define the EarlyBird fallback positions.
+ *
+ * EarlyBird CSV: 57 columns. A "CTA Image" column at AG (col 32) does not
+ * exist in Blue Ox or Paul Bunyan — this shifts all image columns right by 1
+ * starting at AG. Dynamic header detection handles this automatically.
+ *
+ * Image notes:
+ *   - Only hero_image ({slug}-hero.webp) and image_2 ({slug}-2.webp) are used.
+ *   - image_3 (AM column) is empty for all EarlyBird rows — skipped entirely.
+ *   - Fallback image attachment IDs must be set via the FALLBACK_*_ID constants
+ *     after uploading a fallback image to the media library.
  *
  * Idempotent: keyed on page slug. Re-running produces zero changes when
  * content has not changed. Images are cached by attachment ID in post meta
@@ -26,10 +36,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class PaulBunyan_Location_Importer {
+class EarlyBird_Location_Importer {
 
 	// -------------------------------------------------------------------------
-	// Fallback column indices (0-based) — Paul Bunyan CSV layout (56 columns).
+	// Fallback column indices (0-based) — EarlyBird CSV layout (57 columns).
+	// Image columns are +1 vs Paul Bunyan due to CTA Image column at AG (32).
 	// -------------------------------------------------------------------------
 
 	const COL_PAGE_TYPE  = 0;  // A  — filter: keep "Location" rows only
@@ -57,29 +68,45 @@ class PaulBunyan_Location_Importer {
 	const COL_FAQ3_Q     = 28; // AC — FAQ Q3
 	const COL_FAQ3_A     = 29; // AD — FAQ A3
 	const COL_CTA_TEXT   = 30; // AE — Primary CTA Text
-	const COL_HERO_IMG   = 33; // AH — Hero Image (Google Drive URL)
-	const COL_HERO_ALT   = 34; // AI — Hero Image Alt Text
-	const COL_IMG2       = 35; // AJ — Image 2 (Google Drive URL)
-	const COL_IMG2_ALT   = 36; // AK — Image 2 Alt Text
-	const COL_IMG3_ALT   = 38; // AM — Image 3 Alt Text
-	const COL_SCHEMA     = 41; // AP — Schema Type  → schema_type ACF field
-	const COL_OG_TITLE   = 42; // AQ — OG Title        → rank_math_og_title
-	const COL_OG_DESC    = 43; // AR — OG Description  → rank_math_og_description
-	const COL_REVIEW1    = 44; // AS — Review 1 (first "Location Specific Review 1")
-	const COL_REVIEW2    = 45; // AT — Review 2 ("Location Specific Review 2")
-	const COL_REVIEW3    = 46; // AU — Review 3 (second "Location Specific Review 1")
+	const COL_PHONE      = 33; // AH — Phone # Display → phone_display ACF field
+	// AG=32 is CTA Image (new vs Blue Ox) — shifts all subsequent image cols +1
+	const COL_HERO_IMG   = 34; // AI — Hero Image (shifted from AH/33 in Paul Bunyan)
+	const COL_HERO_ALT   = 35; // AJ — Hero Image Alt Text
+	const COL_IMG2       = 36; // AK — Image 2
+	const COL_IMG2_ALT   = 37; // AL — Image 2 Alt Text
+	// AM=38 is Image 3 — empty for all EarlyBird rows, not processed
+	const COL_OG_TITLE   = 43; // AR — OG Title        → rank_math_og_title
+	const COL_OG_DESC    = 44; // AS — OG Description  → rank_math_og_description
+	const COL_REVIEW1    = 45; // AT — Review 1
+	const COL_REVIEW2    = 46; // AU — Review 2
+	const COL_REVIEW3    = 47; // AV — Review 3
 
-	/** Fallback schema_type value when the CSV column is blank. */
-	const DEFAULT_SCHEMA = 'Plumber';
+	/** Schema type is always Electrician for EarlyBird — not read from CSV. */
+	const SCHEMA_TYPE = 'Electrician';
 
-	/** Slugs that already exist as standard WP pages that must not be touched. */
-	const PROTECTED_SLUGS = [ 'minneapolis', 'rochester' ];
+	/**
+	 * Slugs that already exist as standard WP pages that must not be touched.
+	 * Add any protected slugs here before running the importer.
+	 * Check WP Admin for existing pages that conflict with location slugs.
+	 */
+	const PROTECTED_SLUGS = [];
 
 	/** Page template filename (relative to child theme root). */
 	const PAGE_TEMPLATE = 'template-location.php';
 
 	/** Minimum column padding applied before processing each data row. */
-	const MIN_COLS = 56;
+	const MIN_COLS = 57;
+
+	/**
+	 * Fallback attachment IDs used when a location's own image file is missing.
+	 * Set these to the attachment IDs of fallback images uploaded to the media
+	 * library. 0 means no fallback — the field will be skipped on missing images.
+	 *
+	 * To find an attachment ID: WP Admin → Media Library → open the image →
+	 * read the post= number from the URL.
+	 */
+	const FALLBACK_HERO_ID   = 0; // ← UPDATE: set to attachment ID of fallback hero image
+	const FALLBACK_IMAGE2_ID = 0; // ← UPDATE: set to attachment ID of fallback image 2
 
 	// -------------------------------------------------------------------------
 	// Instance state
@@ -107,13 +134,6 @@ class PaulBunyan_Location_Importer {
 
 	/** @var array */
 	private $log = [];
-
-	/**
-	 * Fallback attachment IDs resolved once at the start of run().
-	 * 0 means the fallback image was not found in the media library.
-	 */
-	private $fallback_hero_id   = 0;
-	private $fallback_image2_id = 0;
 
 	/** @var array */
 	private $stats = [
@@ -167,10 +187,9 @@ class PaulBunyan_Location_Importer {
 			'COL_FAQ3_Q'     => self::COL_FAQ3_Q,
 			'COL_FAQ3_A'     => self::COL_FAQ3_A,
 			'COL_CTA_TEXT'   => self::COL_CTA_TEXT,
+			'COL_PHONE'      => self::COL_PHONE,
 			'COL_HERO_ALT'   => self::COL_HERO_ALT,
 			'COL_IMG2_ALT'   => self::COL_IMG2_ALT,
-			'COL_IMG3_ALT'   => self::COL_IMG3_ALT,
-			'COL_SCHEMA'     => self::COL_SCHEMA,
 			'COL_OG_TITLE'   => self::COL_OG_TITLE,
 			'COL_OG_DESC'    => self::COL_OG_DESC,
 			'COL_REVIEW1'    => self::COL_REVIEW1,
@@ -199,9 +218,6 @@ class PaulBunyan_Location_Importer {
 			$this->log_result( 0, '', 'error', 'Cannot open CSV: ' . $this->csv_file );
 			return $this->result();
 		}
-
-		// Resolve fallback attachment IDs once before processing any rows.
-		$this->resolve_fallback_ids();
 
 		// Strip UTF-8 BOM if present (common in Excel-exported CSVs).
 		$bom = fread( $fh, 3 );
@@ -273,10 +289,9 @@ class PaulBunyan_Location_Importer {
 			'COL_FAQ3_Q'     => 'faq q3',
 			'COL_FAQ3_A'     => 'faq a3',
 			'COL_CTA_TEXT'   => 'primary cta',
+			'COL_PHONE'      => 'phone',
 			'COL_HERO_ALT'   => 'hero image alt',
 			'COL_IMG2_ALT'   => 'image 2 alt',
-			'COL_IMG3_ALT'   => 'image 3 alt',
-			'COL_SCHEMA'     => 'schema type',
 			'COL_OG_TITLE'   => 'og title',
 			'COL_OG_DESC'    => 'og description',
 		];
@@ -330,7 +345,7 @@ class PaulBunyan_Location_Importer {
 		$slug_raw = trim( $cols[ $c['COL_SLUG'] ] );
 
 		// Extract the last path segment from the URL in the slug column.
-		// e.g. "https://paulbunyanplumbing.com/maple-grove/" → "maple-grove"
+		// e.g. "https://earlybirdelectricians.com/saint-paul/" → "saint-paul"
 		$parts = array_values( array_filter( explode( '/', $slug_raw ) ) );
 		$slug  = sanitize_title( end( $parts ) ?: $slug_raw );
 
@@ -470,13 +485,7 @@ class PaulBunyan_Location_Importer {
 
 		// --- CTA tab ---
 		update_field( 'primary_cta_text', trim( $cols[ $c['COL_CTA_TEXT'] ] ), $post_id );
-
-		// --- Schema tab ---
-		// $schema_type = trim( $cols[ $c['COL_SCHEMA'] ] );
-		// update_field( 'schema_type', $schema_type ?: self::DEFAULT_SCHEMA, $post_id );
-		// Normalize schema type — CSV may contain "LocalBusiness, Plumber" or similar.
-		// Always use Plumber for Paul Bunyan location pages.
-		update_field( 'schema_type', 'Plumber', $post_id );
+		update_field( 'phone_display',    trim( $cols[ $c['COL_PHONE'] ] ),    $post_id );
 
 		// --- FAQ fields (fixed named, not repeater) ---
 		update_field( 'faq_1_question', trim( $cols[ $c['COL_FAQ1_Q'] ] ), $post_id );
@@ -512,27 +521,22 @@ class PaulBunyan_Location_Importer {
 
 		$c = $this->col;
 
+		// EarlyBird: only hero_image and image_2 — image_3 (AM column) is empty
+		// for all rows and is not processed.
 		$images = [
 			'hero_image' => [
 				'filename'    => "{$slug}-hero.webp",
 				'alt'         => trim( $cols[ $c['COL_HERO_ALT'] ] ),
 				'alt_field'   => 'hero_alt',
-				'cache_key'   => "_pb_img_hero_{$slug}",
-				'fallback_id' => $this->fallback_hero_id,
+				'cache_key'   => "_eb_img_hero_{$slug}",
+				'fallback_id' => self::FALLBACK_HERO_ID,
 			],
 			'image_2' => [
 				'filename'    => "{$slug}-2.webp",
 				'alt'         => trim( $cols[ $c['COL_IMG2_ALT'] ] ),
 				'alt_field'   => 'image_2_alt',
-				'cache_key'   => "_pb_img_2_{$slug}",
-				'fallback_id' => $this->fallback_image2_id,
-			],
-			'image_3' => [
-				'filename'    => "{$slug}.webp",
-				'alt'         => trim( $cols[ $c['COL_IMG3_ALT'] ] ),
-				'alt_field'   => 'image_3_alt',
-				'cache_key'   => "_pb_img_3_{$slug}",
-				'fallback_id' => 0, // No fallback defined for image_3.
+				'cache_key'   => "_eb_img_2_{$slug}",
+				'fallback_id' => self::FALLBACK_IMAGE2_ID,
 			],
 		];
 
@@ -699,36 +703,6 @@ class PaulBunyan_Location_Importer {
 	}
 
 	/**
-	 * Look up fallback attachment IDs from the media library by filename.
-	 */
-	private function resolve_fallback_ids(): void {
-		$lookups = [
-			'fallback_hero_id'   => 'maple-grove-hero.webp',
-			'fallback_image2_id' => 'maple-grove-2.webp',
-		];
-
-		foreach ( $lookups as $property => $filename ) {
-			$posts = get_posts( [
-				'post_type'              => 'attachment',
-				'post_status'            => 'inherit',
-				'posts_per_page'         => 1,
-				'no_found_rows'          => true,
-				'update_post_term_cache' => false,
-				'fields'                 => 'ids',
-				'meta_query'             => [ [
-					'key'     => '_wp_attached_file',
-					'value'   => $filename,
-					'compare' => 'LIKE',
-				] ],
-			] );
-
-			if ( ! empty( $posts ) ) {
-				$this->$property = (int) $posts[0];
-			}
-		}
-	}
-
-	/**
 	 * In dry-run mode, report any missing image files for a given slug.
 	 */
 	private function check_images_exist( string $slug, int $row_num ): void {
@@ -737,9 +711,8 @@ class PaulBunyan_Location_Importer {
 		}
 
 		$image_fallbacks = [
-			"{$slug}-hero.webp" => $this->fallback_hero_id,
-			"{$slug}-2.webp"    => $this->fallback_image2_id,
-			"{$slug}.webp"      => 0,
+			"{$slug}-hero.webp" => self::FALLBACK_HERO_ID,
+			"{$slug}-2.webp"    => self::FALLBACK_IMAGE2_ID,
 		];
 
 		foreach ( $image_fallbacks as $filename => $fallback_id ) {

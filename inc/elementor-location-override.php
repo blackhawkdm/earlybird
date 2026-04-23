@@ -27,6 +27,9 @@
  * the URL when editing the template:
  *   .../wp-admin/post.php?post=XXXX&action=elementor
  *
+ * Steps: WP Admin → Templates → Theme Builder → open "Location Page Template"
+ *        → read post=XXXX from the URL → update the constant below.
+ *
  * @package HelloElementorChild
  */
 
@@ -35,23 +38,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Post ID of the "Location Page Template" entry in the Elementor library. */
-define( 'PAULBUNYAN_LOCATION_ELEMENTOR_TEMPLATE_ID', 8728 ); // ← UPDATE THIS after creating the Elementor template
+define( 'EARLYBIRD_LOCATION_ELEMENTOR_TEMPLATE_ID', 0 ); // ← UPDATE THIS after creating the Elementor template
 
-add_action( 'template_redirect', 'paulbunyan_queue_location_template', 20 );
+add_action( 'template_redirect', 'earlybird_queue_location_template', 20 );
 
 /**
  * Push the location template into Elementor's 'single' location queue for any
  * page using template-location.php. Runs before the template file is loaded so
  * it's in place when elementor_theme_do_location('single') fires.
  */
-function paulbunyan_queue_location_template(): void {
+function earlybird_queue_location_template(): void {
 	// Only act on singular pages — skip admin, feeds, REST, etc.
 	if ( ! is_singular() ) {
 		return;
 	}
 
 	// Bail if the template ID hasn't been set yet.
-	if ( 0 === PAULBUNYAN_LOCATION_ELEMENTOR_TEMPLATE_ID ) {
+	if ( 0 === EARLYBIRD_LOCATION_ELEMENTOR_TEMPLATE_ID ) {
 		return;
 	}
 
@@ -74,5 +77,5 @@ function paulbunyan_queue_location_template(): void {
 	$locations_manager = \ElementorPro\Modules\ThemeBuilder\Module::instance()
 		->get_locations_manager();
 
-	$locations_manager->add_doc_to_location( 'single', PAULBUNYAN_LOCATION_ELEMENTOR_TEMPLATE_ID );
+	$locations_manager->add_doc_to_location( 'single', EARLYBIRD_LOCATION_ELEMENTOR_TEMPLATE_ID );
 }
