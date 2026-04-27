@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Post ID of the "Location Page Template" entry in the Elementor library. */
-define( 'EARLYBIRD_LOCATION_ELEMENTOR_TEMPLATE_ID', 14951 );
+define( 'EARLYBIRD_LOCATION_ELEMENTOR_TEMPLATE_ID', 15228 );
 
 add_action( 'template_redirect', 'earlybird_queue_location_template', 20 );
 
